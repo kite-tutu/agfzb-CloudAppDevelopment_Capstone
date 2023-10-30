@@ -13,8 +13,7 @@ class CarMake(models.Model):
     '''
     name = models.CharField(max_length=30)
     description = models.CharField(max_length=120)
-
-    def __str__(self):
+def __str__(self):
         return self.name 
 
 class CarModel(models.Model):
@@ -39,24 +38,38 @@ class CarModel(models.Model):
         return "Model: " + self.car_model_name
 
 # <HINT> Create a plain Python class `CarDealer` to hold dealer data
-class CarDealer(models.Model):
+class CarDealer:
     '''Car Dealer Model
     '''
-    dealerid = models.IntegerField()
-    dealer_firstname = models.CharField(max_length=30)
-    dealer_lastname = models.CharField(max_length=30)
-    dealer_email = models.EmailField(max_length=20)
-    dealer_phoneno = models.CharField(max_length=30)
+    def __init__(self, address, city, full_name, id, lat, long, short_name, st, zip):
+        self.address = address
+        self.city = city
+        self.full_name = full_name
+        self.id = id
+        self.lat = lat
+        self.long = long
+        self.short_name = short_name
+        self.st = st
+        self.zip = zip
 
     def __str__(self):
-        return "Names: " + self.dealer_firstname + " " + \
-                self.dealer_lastname
+        return "Dealer name: " + self.full_name
 
-class DealerReview(models.Model):
-    ''' Dealer Review Model
+class DealerReview:
+    '''Car DealerReview Model
     '''
-    dealer = models.ForeignKey(CarDealer, on_delete=models.CASCADE)
-    review_id = models.CharField(max_length=30)
+    def __init__(self, dealership, name, purchase, review, purchase_date, car_make,car_model, car_year,id):
+        self.dealership = dealership
+        self.name = name
+        self.purchase = purchase
+        self.review = review
+        self.purchase_date = purchase_date
+        self.car_make = car_make
+        self.short_name = ""
+        self.car_model = car_model
+        self.car_year = car_year
+        self.sentiment = ""
+        self.id = id
 
     def __str__(self):
-        return self.dealer + " " + self.review_id
+        return "Review: " + self.name
