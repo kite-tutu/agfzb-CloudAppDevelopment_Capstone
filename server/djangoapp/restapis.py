@@ -148,7 +148,7 @@ def post_request(url, json_payload, **kwargs):
 
 def analyze_review_sentiments(dealerreview):
     url = "https://api.au-syd.natural-language-understanding.watson.cloud.ibm.com/instances/1fa5201c-fad5-4e57-9617-2507a6aa62f7"
-    api_key = ""
+    api_key = "HZXwgi7SKOF_CfKE6qL-81s25gHPAxzdf12pKOzUxaTR"
     authenticator = IAMAuthenticator(api_key)
     natural_language_understanding = NaturalLanguageUnderstandingV1(version='2022-04-07',authenticator=authenticator)
     natural_language_understanding.set_service_url(url)
