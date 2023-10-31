@@ -135,6 +135,12 @@ def get_dealer_by_state_from_cf(url, stateval,**kwargs):
             results.append(dealer_obj)
     return dealers
 
+# Create a `post_request` to make HTTP POST requests
+def post_request(url, json_payload, **kwargs):
+    requests.post(url, params=kwargs, json=json_payload['review'])
+
+    return print("Review posted", json_payload)
+    
 # Create an `analyze_review_sentiments` method to call Watson NLU and analyze text
 # def analyze_review_sentiments(text):
 # - Call get_request() with specified arguments

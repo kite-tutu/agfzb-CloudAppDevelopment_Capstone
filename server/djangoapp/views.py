@@ -3,7 +3,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render, redirect
 from .models import DealerReview
-from .restapis import get_dealers_from_cf,get_dealer_reviews_from_cf,get_dealer_by_state_from_cf,get_dealer_by_id_from_cf
+from .restapis import get_dealers_from_cf,get_dealer_reviews_from_cf,get_dealer_by_state_from_cf,get_dealer_by_id_from_cf,post_request
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from datetime import datetime
@@ -82,27 +82,32 @@ def registration_request(request):
 # Update the `get_dealerships` view to render the index page with a list of dealerships
 def get_dealerships(request):
     if request.method == "GET":
+        context={}
         url = "https://kitetutu-3000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
         # Get dealers from the URL
         dealerships = get_dealers_from_cf(url)
         # Concat all dealer's short name
-        dealer_names = ' '.join([dealer.short_name for dealer in dealerships])
+        #dealer_names = ' '.join([dealer.short_name for dealer in dealerships])
         # Return a list of dealer short name
-        return HttpResponse(dealer_names)
+        context["dealers"]=dealerships
+        return render(request, 'djangoapp/index.html', context)
+        #return HttpResponse(dealer_names)
 
 # Create a `get_dealer_details` view to render the reviews of a dealer
 # def get_dealer_details(request, dealer_id):
 # ...
 def get_dealer_details(request, dealer_id):
     if request.method == "GET":
+        context ={}
         url = "https://kitetutu-5000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews?id="+str(dealer_id)+""
         # Get dealers from the URL
         dealerships = get_dealer_reviews_from_cf(url, dealer_id)
-        print(dealerships)
+        context['reviews']=(dealerships)
         # Concat all dealer's reviews
         #dealer_reviews = ' '.join([dealer.review for dealer in dealerships])
         # Return a list of dealer short name
         return HttpResponse(dealerships)
+        #return render(request, 'djangoapp/dealer_details.html', context)
 
 def get_dealer_by_id(request, dealer_id):
     if request.method == "GET":
@@ -111,9 +116,9 @@ def get_dealer_by_id(request, dealer_id):
         dealerships = get_dealer_by_id_from_cf(url,dealer_id)
         print(dealerships)
         # Concat all dealer's reviews
-        #dealer_reviews = ' '.join([dealer.review for dealer in dealerships])
+        dealer_reviews = ' '.join([dealer.review for dealer in dealerships])
         # Return a list of dealer short name
-        return HttpResponse(dealerships)
+        return HttpResponse(dealer_reviews)
 
 def get_dealers_by_state(request, stateval):
     if request.method == "GET":
@@ -124,6 +129,48 @@ def get_dealers_by_state(request, stateval):
         #dealer_reviews = ' '.join([dealer for dealer in dealerships])
         # Return a list of dealer short name
         return HttpResponse(dealerships)
+
 # Create a `add_review` view to submit a review
-# def add_review(request, dealer_id):
-# ...
+def add_review(request, dealer_id):
+    request.method = "POST"
+    if request.user.is_authenticated:
+        if request.method == "GET":
+            context = {}
+            
+            return render(request, "djangoapp/add_review.html", context)
+
+        elif request.method == "POST":
+            context={}
+            user = request.user
+            review = {}
+            review["id"] = dealer_id
+            review["name"] = f"{user.first_name} {user.last_name}"
+            #review["dealership"] = request.POST['dealership']
+            #review["review"] = request.POST['review']        
+            #review["purchase"] = request.POST['purchase']
+            #review["purchase_date"] = request.POST['purchasedate']
+            #review["car_make"] = request.POST['car_make']
+            #review["car_model"] = request.POST['car_model']
+            #review["car_year"] = request.POST['car_year']
+            url = "https://kitetutu-5000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/post_review"
+            json_payload = {}
+            json_payload["review"] = review
+            json_payload["review"] = {
+                                        "id":1503,
+                                        "name": "Roseann Agbatutu",
+                                        "dealership": 112,
+                                        "review":"Poor Service",
+                                        "purchase": "True",
+                                        "purchase_date": "05/06/2023",
+                                        "car_make": "Passat",
+                                        "car_model": "SUV",
+                                        "car_year": 2022
+                                    }
+            post_request(url, json_payload, dealerId=dealer_id)
+            print("Review submitted.")
+
+            return render(request,"djangoapp/dealer_details.html",json_payload)
+            
+    else: 
+        print("User is not authenticated")
+        return redirect("djangoapp:dealer_details", context)
