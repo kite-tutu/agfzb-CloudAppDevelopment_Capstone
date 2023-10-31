@@ -3,7 +3,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render, redirect
 from .models import DealerReview
-from .restapis import get_dealers_from_cf,get_dealer_reviews_from_cf
+from .restapis import get_dealers_from_cf,get_dealer_reviews_from_cf,get_dealer_by_state_from_cf,get_dealer_by_id_from_cf
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from datetime import datetime
@@ -104,7 +104,26 @@ def get_dealer_details(request, dealer_id):
         # Return a list of dealer short name
         return HttpResponse(dealer_reviews)
 
+def get_dealer_by_id(request, dealer_id):
+    if request.method == "GET":
+        url = "https://kitetutu-5000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews?id="+str(dealer_id)+""
+        # Get dealers from the URL
+        dealerships = get_dealer_by_id_from_cf(url,dealer_id)
+        print(dealerships)
+        # Concat all dealer's reviews
+        #dealer_reviews = ' '.join([dealer.review for dealer in dealerships])
+        # Return a list of dealer short name
+        return HttpResponse(dealerships)
 
+def get_dealers_by_state(request, stateval):
+    if request.method == "GET":
+        url = "https://kitetutu-3000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get?state="+ stateval +""
+        # Get dealers from the URL
+        dealerships = get_dealer_by_state_from_cf(url,stateval=stateval)
+        # Concat all dealer's reviews
+        #dealer_reviews = ' '.join([dealer for dealer in dealerships])
+        # Return a list of dealer short name
+        return HttpResponse(dealerships)
 # Create a `add_review` view to submit a review
 # def add_review(request, dealer_id):
 # ...
