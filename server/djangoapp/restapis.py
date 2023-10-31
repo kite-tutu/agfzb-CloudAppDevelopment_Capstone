@@ -2,24 +2,39 @@ import requests
 import json
 from .models import CarDealer,DealerReview
 from requests.auth import HTTPBasicAuth
+from ibm_watson import NaturalLanguageUnderstandingV1
+from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+from ibm_watson.natural_language_understanding_v1 import Features, EntitiesOptions, SentimentOptions
+import datetime
 
 # Create a `get_request` to make HTTP GET requests
 # e.g., response = requests.get(url, params=params, headers={'Content-Type': 'application/json'},
 #                                     auth=HTTPBasicAuth('apikey', api_key))
 def get_request(url, **kwargs):
-    print(kwargs)
+    # If argument contain API KEY
+    api_key = kwargs.get("api_key")
     print("GET from {} ".format(url))
     try:
-        # Call get method of requests library with URL and parameters
-        response = requests.get(url, headers={'Content-Type': 'application/json'},
-                                    params=kwargs,auth=HTTPBasicAuth('apikey', "Cl0KYPEyjLVRHrKezpg6zLOg0cQ0Bjiaarw3XKxMPp-b"))
-        #print(response.content)
+        if api_key:
+            params = dict()
+            params["text"] = kwargs["text"]
+            params["version"] = kwargs["version"]
+            params["features"] = kwargs["features"]
+            params["return_analyzed_text"] = kwargs["return_analyzed_text"]
+            response = requests.get(url, params=params, headers={'Content-Type': 'application/json'},
+                                    auth=HTTPBasicAuth('apikey', api_key))
+        else:
+            # Call get method of requests library with URL and parameters
+            response = requests.get(url, headers={'Content-Type': 'application/json'},
+                                    params=kwargs)
     except:
         # If any error occurs
         print("Network exception occurred")
+
     status_code = response.status_code
     print("With status {} ".format(status_code))
     json_data = json.loads(response.text)
+
     return json_data
 
 # Create a `post_request` to make HTTP POST requests
@@ -54,14 +69,15 @@ def get_dealers_from_cf(url, **kwargs):
 # Create a get_dealer_reviews_from_cf method to get reviews by dealer id from a cloud function
 # - Call get_request() with specified arguments
 # - Parse JSON results into a DealerView object list
-def get_dealer_reviews_from_cf(url, **kwargs):
+def get_dealer_reviews_from_cf(url,dealerId,**kwargs):
     results = []
     # Call get_request with a URL parameter
-    json_result = get_request(url)
+    json_result = get_request(url,dealer_id=dealerId)
     if json_result:
         print(json_result)
         # Get the row list in JSON as dealers
         dealer_reviews = json_result[0:]
+        #print(dealer_reviews)
         # For each dealer object
         for dealer_review in  dealer_reviews:
             # Get its content in `doc` object
@@ -69,14 +85,15 @@ def get_dealer_reviews_from_cf(url, **kwargs):
             review_doc = dealer_review
             # Create a CarDealer object with values in `doc` object
 
-            review_obj = DealerReview(dealership=review_doc["dealership"], name=review_doc["name"],purchase=review_doc["purchase"], review=review_doc["review"], purchase_date=review_doc["purchase_date"],car_make=review_doc["car_make"], car_model=review_doc["car_model"],car_year=review_doc["car_year"],id=review_doc["id"])
+            review_obj = DealerReview(dealership=review_doc["dealership"], name=review_doc["name"],purchase=review_doc["purchase"], review=review_doc["review"], purchase_date=review_doc["purchase_date"],car_make=review_doc["car_make"], car_model=review_doc["car_model"],car_year=review_doc["car_year"],sentiment="",id=review_doc["id"])
+            review_obj.sentiment = analyze_review_sentiments(review_obj.review)
             results.append(review_obj)
 
             
 
     return results
 
-def get_dealer_by_id_from_cf(url, dealerId):
+def get_dealer_by_id_from_cf(url, dealerId,**kwargs):
     results = []
     # Call get_request with a URL parameter
     json_result = get_request(url,dealerId=dealerId)
@@ -96,7 +113,7 @@ def get_dealer_by_id_from_cf(url, dealerId):
         return results
     
 
-def get_dealer_by_state_from_cf(url, stateval):
+def get_dealer_by_state_from_cf(url, stateval,**kwargs):
     results = []
     # Call get_request with a URL parameter
     json_result = get_request(url,stateval=stateval)
@@ -122,3 +139,15 @@ def get_dealer_by_state_from_cf(url, stateval):
 # def analyze_review_sentiments(text):
 # - Call get_request() with specified arguments
 # - Get the returned sentiment label such as Positive or Negative
+
+def analyze_review_sentiments(dealerreview):
+    url = "https://api.au-syd.natural-language-understanding.watson.cloud.ibm.com/instances/1fa5201c-fad5-4e57-9617-2507a6aa62f7"
+    api_key = "HZXwgi7SKOF_CfKE6qL-81s25gHPAxzdf12pKOzUxaTR"
+    authenticator = IAMAuthenticator(api_key)
+    natural_language_understanding = NaturalLanguageUnderstandingV1(version='2022-04-07',authenticator=authenticator)
+    natural_language_understanding.set_service_url(url)
+    response = natural_language_understanding.analyze( text=dealerreview + "hello hello hello",features=Features(sentiment=SentimentOptions(targets=[dealerreview + "hello hello hello"]))).get_result()
+    label=json.dumps(response, indent=2)
+    label = response['sentiment']['document']['label']
+    
+    return(label)

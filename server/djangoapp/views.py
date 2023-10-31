@@ -97,12 +97,12 @@ def get_dealer_details(request, dealer_id):
     if request.method == "GET":
         url = "https://kitetutu-5000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews?id="+str(dealer_id)+""
         # Get dealers from the URL
-        dealerships = get_dealer_reviews_from_cf(url)
+        dealerships = get_dealer_reviews_from_cf(url, dealer_id)
         print(dealerships)
         # Concat all dealer's reviews
-        dealer_reviews = ' '.join([dealer.review for dealer in dealerships])
+        #dealer_reviews = ' '.join([dealer.review for dealer in dealerships])
         # Return a list of dealer short name
-        return HttpResponse(dealer_reviews)
+        return HttpResponse(dealerships)
 
 def get_dealer_by_id(request, dealer_id):
     if request.method == "GET":
