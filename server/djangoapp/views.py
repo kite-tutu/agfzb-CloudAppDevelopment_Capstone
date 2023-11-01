@@ -96,14 +96,14 @@ def get_dealerships(request):
 # Create a `get_dealer_details` view to render the reviews of a dealer
 # def get_dealer_details(request, dealer_id):
 # ...
-def get_dealer_details(request, dealer_id):
+def get_dealer_details(request, id):
     if request.method == "GET":
         context ={}
-        context["dealer_id"] = dealer_id
-        url = "https://kitetutu-5000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews?id="+str(dealer_id)+""
+        context["dealer_id"] = id
+        url = "https://kitetutu-5000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews?id="+str(id)+""
         # Get dealers from the URL
-        dealerships = get_dealer_reviews_from_cf(url, dealer_id)
-        context['reviews']=(dealerships)
+        dealer_reviews = get_dealer_reviews_from_cf(url, id)
+        context['reviews']=(dealer_reviews)
         # Concat all dealer's reviews
         #dealer_reviews = ' '.join([dealer.review for dealer in dealerships])
         # Return a list of dealer short name
@@ -115,7 +115,7 @@ def get_dealer_by_id(request, dealer_id):
         url = "https://kitetutu-5000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews?id="+str(dealer_id)+""
         # Get dealers from the URL
         dealerships = get_dealer_by_id_from_cf(url,dealer_id)
-        print(dealerships)
+        #print(dealerships)
         # Concat all dealer's reviews
         dealer_reviews = ' '.join([dealer.review for dealer in dealerships])
         # Return a list of dealer short name
@@ -137,8 +137,8 @@ def add_review(request, dealer_id):
         if request.method == "GET":
             context = {}
             cars = list(CarModel.objects.filter(dealerid=dealer_id))
-            for car in cars:
-                car.year = car.year
+            #for car in cars:
+               #car.year = car.year.strftime("%Y")
             context["cars"] = cars
 
             dealer_url = "https://kitetutu-3000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
@@ -155,13 +155,18 @@ def add_review(request, dealer_id):
             review = {}
             review["id"] = dealer_id
             review["name"] = f"{user.first_name} {user.last_name}"
-            review["dealership"] = request.POST['dealership']
-            review["review"] = request.POST['review']        
-            review["purchase"] = request.POST['purchase']
+            review["dealership"] = dealer_id
+            review["review"] = request.POST['content']   
+            review["purchase"] = False
+            checkedVal = request.POST.get('purchasecheck', False)
+            if checkedVal == "on":
+                checkedVal = True
+            review["purchase"] = checkedVal
             review["purchase_date"] = request.POST['purchasedate']
-            review["car_make"] = request.POST['car_make']
-            review["car_model"] = request.POST['car_model']
-            review["car_year"] = request.POST['car_year']
+            car_make, car_model, car_year = request.POST['car_details'].split("-")
+            review["car_make"] = car_make
+            review["car_model"] = car_model
+            review["car_year"] = car_year
             url = "https://kitetutu-5000.theiadocker-3-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/post_review"
             json_payload = {}
             json_payload["review"] = review
@@ -169,7 +174,7 @@ def add_review(request, dealer_id):
             post_request(url, json_payload, dealerId=dealer_id)
             print("Review submitted.")
 
-            return redirect("djangoapp:dealer_details", dealer_id=dealer_id)
+            return redirect("djangoapp:dealer_details", id=dealer_id)
             
     else: 
         print("User is not authenticated")
