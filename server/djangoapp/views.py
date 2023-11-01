@@ -7,6 +7,7 @@ from .restapis import get_dealers_from_cf,get_dealer_reviews_from_cf,get_dealer_
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from datetime import datetime
+from django.utils.dateparse import parse_datetime
 import logging
 import json
 
@@ -161,8 +162,8 @@ def add_review(request, dealer_id):
             checkedVal = request.POST.get('purchasecheck', False)
             if checkedVal == "on":
                 checkedVal = True
-            review["purchase"] = checkedVal
-            review["purchase_date"] = request.POST['purchasedate']
+            review["purchase"] = checkedVal  
+            review["purchase_date"] = request.POST['purchase_date']
             car_make, car_model, car_year = request.POST['car_details'].split("-")
             review["car_make"] = car_make
             review["car_model"] = car_model
